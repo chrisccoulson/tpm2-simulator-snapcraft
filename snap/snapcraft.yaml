@@ -1,0 +1,30 @@
+name: tpm2-simulator-chrisccoulson
+version: '0.1.0'
+summary: TPM 2.0 Reference Simulator
+description: |
+  This is a TPM 2.0 simulator based on the official TCG rerefence
+  implementation of the TPM 2.0 specification.
+base: core18
+architectures:
+  - build-on: amd64
+confinement: classic
+
+apps:
+  tpm2-simulator:
+    command: usr/bin/tpm2-simulator
+
+parts:
+  ms-tpm-20-ref:
+    source: https://github.com/microsoft/ms-tpm-20-ref.git
+    source-commit: b287b66269ec3e91687fcda2c5b51391d9e24912
+    plugin: autotools
+    build-packages:
+      - autoconf-archive
+      - libssl-dev
+      - pkg-config
+    override-build: |
+      cd TPMCmd
+      ./bootstrap
+      ./configure --prefix=/usr
+      make
+      make install DESTDIR=$SNAPCRAFT_PART_INSTALL
