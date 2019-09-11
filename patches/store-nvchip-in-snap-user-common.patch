@@ -1,0 +1,32 @@
+diff --git a/TPMCmd/Simulator/src/TPMCmds.c b/TPMCmd/Simulator/src/TPMCmds.c
+index 435681e..2f98d9b 100644
+--- a/TPMCmd/Simulator/src/TPMCmds.c
++++ b/TPMCmd/Simulator/src/TPMCmds.c
+@@ -45,6 +45,11 @@
+ #include <string.h>
+ #include "BaseTypes.h"
+ 
++#if defined(__unix__)
++#include <errno.h>
++#include <unistd.h>
++#endif
++
+ #ifdef _MSC_VER
+ #   pragma warning(push, 3)
+ #   include <windows.h>
+@@ -247,6 +252,15 @@ main(
+     BOOL    manufacture = FALSE;
+     int     PortNum = DEFAULT_TPM_PORT;
+ 
++#if defined(__unix__)
++    // If we're running as a snap, chdir to the SNAP_USER_COMMON path so that we can
++    // write NVChip without requiring classic confinement
++    char* snapUserPath = getenv("SNAP_USER_COMMON");
++    if (snapUserPath != NULL && chdir(snapUserPath) < 0)
++	    fprintf(stderr, "Cannot change current directory to %s: %s\n",
++		    snapUserPath, strerror(errno));
++#endif
++
+     // Parse command line options
+ 
+     if (CmdLineParser_Init(argc, argv, 2))

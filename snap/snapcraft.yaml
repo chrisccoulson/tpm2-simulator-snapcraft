@@ -7,11 +7,12 @@ description: |
 base: core18
 architectures:
   - build-on: amd64
-confinement: classic
 
 apps:
   tpm2-simulator:
     command: usr/bin/tpm2-simulator
+    plugs:
+      - network-bind
 
 parts:
   ms-tpm-20-ref:
@@ -22,6 +23,9 @@ parts:
       - autoconf-archive
       - libssl-dev
       - pkg-config
+    override-pull: |
+      snapcraftctl pull
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patches/store-nvchip-in-snap-user-common.patch
     override-build: |
       cd TPMCmd
       ./bootstrap
