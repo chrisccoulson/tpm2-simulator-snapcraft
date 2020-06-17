@@ -1,0 +1,122 @@
+diff --git a/TPMCmd/Simulator/src/TPMCmds.c b/TPMCmd/Simulator/src/TPMCmds.c
+index 0aca528..66bb4ba 100644
+--- a/TPMCmd/Simulator/src/TPMCmds.c
++++ b/TPMCmd/Simulator/src/TPMCmds.c
+@@ -45,6 +45,12 @@
+ #include <ctype.h>
+ #include <string.h>
+ 
++#if defined(__unix__)
++#include <linux/limits.h>
++#include <errno.h>
++#include <unistd.h>
++#endif
++
+ #ifdef _MSC_VER
+ #   pragma warning(push, 3)
+ #   include <windows.h>
+@@ -74,6 +80,17 @@ static uint32_t     s_ArgsMask = 0;     // Bit mask of unmatched command line ar
+ static int          s_Argc = 0;
+ static const char **s_Argv = NULL;
+ 
++#if defined(__unix__)
++static char *tmpdir;
++
++static void RemoveTmpdir()
++{
++        char cmd[PATH_MAX + sizeof("rm -rf ")];
++        snprintf(cmd, sizeof(cmd), "rm -rf %s", tmpdir);
++        if (system(cmd));
++}
++#endif // __unix__
++
+ 
+ //** Functions
+ 
+@@ -108,7 +125,12 @@ Usage(
+         "Possible options are:\n"
+         "   -h (--help) or ? - print this message\n"
+         "   -m (--manufacture) - forces NV state of the TPM simulator to be "
+-        "(re)manufactured\n",
++        "(re)manufactured\n"
++#if defined(__unix__)
++        "   -t (--temporary) - store the NV state of the TPM simulator in a "
++        "unique temporary directory, which is removed on exit (implies -m)\n"
++#endif // __unix__
++        ,
+         programName, DEFAULT_TPM_PORT);
+     exit(1);
+ }
+@@ -241,11 +263,24 @@ main(
+     )
+ {
+     bool    manufacture = false;
++#if defined(__unix__)
++    bool    temporary = false;
++#endif // __unix__
+     int     PortNum = DEFAULT_TPM_PORT;
+ 
++#if defined(__unix__)
++    // If we're running as a snap, chdir to the SNAP_USER_COMMON path so that we can
++    // write NVChip without requiring classic confinement.
++    // TODO: Remove this once users chdir in to an appropriate directory.
++    if (getenv("SNAP") && chdir(getenv("HOME")) < 0) {
++        fprintf(stderr, "Cannot cd to homedir: %s\n", strerror(errno));
++        exit(1);
++    }
++#endif
++
+     // Parse command line options
+ 
+-    if (CmdLineParser_Init(argc, argv, 2))
++    if (CmdLineParser_Init(argc, argv, 3))
+     {
+         if (   CmdLineParser_IsOptPresent("?", "?")
+             || CmdLineParser_IsOptPresent("help", "h"))
+@@ -256,6 +291,12 @@ main(
+         {
+             manufacture = true;
+         }
++#if defined(__unix__)
++        if (CmdLineParser_IsOptPresent("temporary", "t"))
++        {
++            temporary = true;
++        }
++#endif // __unix__
+         if (CmdLineParser_More())
+         {
+             int     i;
+@@ -281,6 +322,33 @@ main(
+     }
+     printf("LIBRARY_COMPATIBILITY_CHECK is %s\n", 
+         (LIBRARY_COMPATIBILITY_CHECK ? "ON" : "OFF"));
++#if defined(__unix__)
++    if (temporary)
++    {
++        const char *tmp = getenv("TMP");
++        if (!tmp)
++                tmp = "/tmp";
++        char path[PATH_MAX];
++        int res = snprintf(path, sizeof(path), "%s/tpm2-simulator.XXXXXX", tmp);
++        if (res < 0 || res >= PATH_MAX)
++        {
++            fprintf(stderr, "Cannot build temporary path\n");
++            exit(1);
++        }
++        if (!mkdtemp(path))
++        {
++            fprintf(stderr, "Cannot create tempdir: %s\n", strerror(errno));
++            exit(1);
++        }
++        tmpdir = path;
++        atexit(RemoveTmpdir);
++        if (chdir(path) < 0)
++        {
++            fprintf(stderr, "Cannot cd to tempdir: %s\n", strerror(errno));
++            exit(1);
++        }
++    }
++#endif // __unix__
+     // Enable NV memory
+     _plat__NVEnable(NULL);
+ 

@@ -12,6 +12,7 @@ apps:
   tpm2-simulator:
     command: usr/bin/tpm2-simulator
     plugs:
+      - home
       - network-bind
 
 parts:
@@ -25,7 +26,7 @@ parts:
       - pkg-config
     override-pull: |
       snapcraftctl pull
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patches/store-nvchip-in-snap-user-common.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patches/allow-nvchip-in-tmpdir.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patches/wait-for-remote-close.patch
     override-build: |
       cd TPMCmd
