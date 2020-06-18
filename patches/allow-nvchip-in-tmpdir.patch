@@ -1,5 +1,5 @@
 diff --git a/TPMCmd/Simulator/src/TPMCmds.c b/TPMCmd/Simulator/src/TPMCmds.c
-index 0aca528..66bb4ba 100644
+index 0aca528..5517883 100644
 --- a/TPMCmd/Simulator/src/TPMCmds.c
 +++ b/TPMCmd/Simulator/src/TPMCmds.c
 @@ -45,6 +45,12 @@
@@ -60,7 +60,7 @@ index 0aca528..66bb4ba 100644
 +    // If we're running as a snap, chdir to the SNAP_USER_COMMON path so that we can
 +    // write NVChip without requiring classic confinement.
 +    // TODO: Remove this once users chdir in to an appropriate directory.
-+    if (getenv("SNAP") && chdir(getenv("HOME")) < 0) {
++    if (getenv("SNAP") && !getenv("TPM2SIM_DONT_CD_TO_HOME") && chdir(getenv("HOME")) < 0) {
 +        fprintf(stderr, "Cannot cd to homedir: %s\n", strerror(errno));
 +        exit(1);
 +    }
