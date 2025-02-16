@@ -1,5 +1,5 @@
 name: tpm2-simulator-chrisccoulson
-version: '0.1.0'
+version: '1.83.0'
 summary: TPM 2.0 Reference Simulator
 description: |
   This is a TPM 2.0 simulator based on the official TCG rerefence
@@ -18,7 +18,7 @@ apps:
 parts:
   ms-tpm-20-ref:
     source: https://github.com/chrisccoulson/ms-tpm-20-ref.git
-    source-commit: ae09de70fbbe97b6c645d53c2ccd7d2d27cb52bd
+    source-commit: 7603b835bb9635a0012286d57ddc8bf716ea5457
     plugin: autotools
     build-packages:
       - autoconf-archive
